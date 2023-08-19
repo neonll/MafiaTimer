@@ -4,8 +4,10 @@ import android.graphics.BitmapFactory
 import android.graphics.Paint
 import android.graphics.RectF
 import android.graphics.Typeface
+import android.media.AudioManager
 import android.os.Bundle
 import android.os.CountDownTimer
+import android.view.KeyEvent
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Canvas
@@ -46,6 +48,7 @@ class MainActivity : ComponentActivity() {
     var pausedTime by mutableStateOf(0L)
 
     private var countDownTimer: CountDownTimer? = null
+    private var mAudioManager: AudioManager? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -58,6 +61,7 @@ class MainActivity : ComponentActivity() {
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
 
+                        mAudioManager = getSystemService(AUDIO_SERVICE) as AudioManager
 
                         val paint = Paint()
 
@@ -87,7 +91,7 @@ class MainActivity : ComponentActivity() {
                             val sweepAngle = 360f * (remainingTime.toFloat() / countdownTime.toFloat())
 
                             drawArc(
-                                color = Color.Blue,
+                                color = if (remainingTime / 1000 <= 10) Color.Red else Color.Blue,
                                 startAngle = startAngle,
                                 sweepAngle = sweepAngle,
                                 useCenter = false,
@@ -133,16 +137,19 @@ class MainActivity : ComponentActivity() {
                                         isTimerRunning = false
                                         isPaused = true
                                         pausedTime = remainingTime
+                                        mPlayerPause()
                                     } else {
                                         if (isPaused) {
                                             initializeTimer(pausedTime)
                                             countDownTimer?.start()
                                             isTimerRunning = true
                                             isPaused = false
+                                            mPlayerPlay()
                                         } else {
                                             if (remainingTime > 0) {
                                                 countDownTimer?.start()
                                                 isTimerRunning = true
+                                                mPlayerPlay()
                                             }
                                         }
                                     }
@@ -168,6 +175,7 @@ class MainActivity : ComponentActivity() {
                                     pausedTime = countdownTime
                                     isTimerRunning = false
                                     isPaused = false
+                                    mPlayerPause()
                                 }
                             ) {
                                 Image(
@@ -190,6 +198,7 @@ class MainActivity : ComponentActivity() {
                                     pausedTime = countdownTime
                                     isTimerRunning = false
                                     isPaused = false
+                                    mPlayerPause()
                                 }
                             ) {
                                 Image(
@@ -219,7 +228,24 @@ class MainActivity : ComponentActivity() {
             override fun onFinish() {
                 remainingTime = 0
                 isTimerRunning = false
+                mPlayerPause()
             }
         }
+    }
+
+    private fun mPlayerPause() {
+        val event = KeyEvent(
+            KeyEvent.ACTION_DOWN,
+            KeyEvent.KEYCODE_MEDIA_PAUSE
+        )
+        mAudioManager?.dispatchMediaKeyEvent(event)
+    }
+
+    private fun mPlayerPlay() {
+        val event = KeyEvent(
+            KeyEvent.ACTION_DOWN,
+            KeyEvent.KEYCODE_MEDIA_PLAY
+        )
+        mAudioManager?.dispatchMediaKeyEvent(event)
     }
 }
