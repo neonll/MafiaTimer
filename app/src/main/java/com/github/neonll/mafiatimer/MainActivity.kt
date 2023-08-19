@@ -23,8 +23,11 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
+import androidx.compose.material3.Text
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -34,6 +37,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.github.neonll.mafiatimer.ui.theme.MafiaTimerTheme
 import kotlin.math.min
@@ -63,9 +67,11 @@ class MainActivity : ComponentActivity() {
 
                         mAudioManager = getSystemService(AUDIO_SERVICE) as AudioManager
 
+                        var isNextTrack by remember { mutableStateOf(false) }
+
                         val paint = Paint()
 
-                        Canvas(modifier = Modifier.size(200.dp)) {
+                        Canvas(modifier = Modifier.size(140.dp)) {
                             val logo = BitmapFactory.decodeResource(resources,R.raw.mafia_logo)
                             val aspectRatio = logo.width.toFloat() / logo.height.toFloat()
 
@@ -78,7 +84,27 @@ class MainActivity : ComponentActivity() {
 
                         }
 
-                        Spacer(modifier = Modifier.height(80.dp))
+                        Spacer(modifier = Modifier.height(30.dp))
+
+                        Row(
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Switch(
+                                checked = isNextTrack,
+                                onCheckedChange = {
+                                    isNextTrack = it
+                                }
+                            )
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Text(
+                                text = "Next track on Reset",
+                                color = Color.White,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(30.dp))
 
                         Canvas(
                             modifier = Modifier
@@ -122,7 +148,7 @@ class MainActivity : ComponentActivity() {
                             }
                         }
 
-                        Spacer(modifier = Modifier.height(80.dp))
+                        Spacer(modifier = Modifier.height(30.dp))
                         
                         Row(
                             horizontalArrangement = Arrangement.Center,
@@ -144,12 +170,12 @@ class MainActivity : ComponentActivity() {
                                             countDownTimer?.start()
                                             isTimerRunning = true
                                             isPaused = false
-                                            mPlayerPlay()
+                                            mPlayerPlay(false)
                                         } else {
                                             if (remainingTime > 0) {
                                                 countDownTimer?.start()
                                                 isTimerRunning = true
-                                                mPlayerPlay()
+                                                mPlayerPlay(isNextTrack)
                                             }
                                         }
                                     }
@@ -241,10 +267,10 @@ class MainActivity : ComponentActivity() {
         mAudioManager?.dispatchMediaKeyEvent(event)
     }
 
-    private fun mPlayerPlay() {
+    private fun mPlayerPlay(isNextTrack: Boolean) {
         val event = KeyEvent(
             KeyEvent.ACTION_DOWN,
-            KeyEvent.KEYCODE_MEDIA_PLAY
+            if (isNextTrack) KeyEvent.KEYCODE_MEDIA_NEXT else KeyEvent.KEYCODE_MEDIA_PLAY
         )
         mAudioManager?.dispatchMediaKeyEvent(event)
     }
