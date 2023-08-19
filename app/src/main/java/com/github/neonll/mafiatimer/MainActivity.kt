@@ -40,6 +40,8 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.github.neonll.mafiatimer.ui.theme.MafiaTimerTheme
+import com.github.neonll.mafiatimer.ui.theme.ColorBlue
+import com.github.neonll.mafiatimer.ui.theme.ColorRed
 import kotlin.math.min
 
 
@@ -58,7 +60,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             MafiaTimerTheme {
-                Surface(modifier = Modifier.fillMaxSize(), color = Color.Black) {
+                Surface(modifier = Modifier.fillMaxSize()) {
                     Column(
                         modifier = Modifier.fillMaxSize(),
                         verticalArrangement = Arrangement.Center,
@@ -117,7 +119,7 @@ class MainActivity : ComponentActivity() {
                             val sweepAngle = 360f * (remainingTime.toFloat() / countdownTime.toFloat())
 
                             drawArc(
-                                color = if (remainingTime / 1000 <= 10) Color.Red else Color.Blue,
+                                color = if (remainingTime / 1000 <= 10) ColorRed else ColorBlue,
                                 startAngle = startAngle,
                                 sweepAngle = sweepAngle,
                                 useCenter = false,
@@ -137,7 +139,7 @@ class MainActivity : ComponentActivity() {
                                 val text = "${remainingTime / 1000}"
                                 if (remainingTime / 1000 <= 10) {
                                     paint.apply {
-                                        color = Color.Red.hashCode()
+                                        color = ColorRed.hashCode()
                                     }
                                 } else {
                                     paint.apply {
