@@ -193,6 +193,10 @@ class MainActivity : ComponentActivity() {
             onClick = {
                 mPlayerPlay(true)
                 isNight = true
+                countDownTimer?.cancel()
+                pausedTime = countdownTime
+                isTimerRunning = false
+                isPaused = false
             },
             enabled = !isNight
         ) {
@@ -209,6 +213,7 @@ class MainActivity : ComponentActivity() {
         Button(
             modifier = Modifier.size(100.dp),
             shape = RoundedCornerShape(20.dp),
+            enabled = !isNight,
             onClick = {
                 if (isTimerRunning) {
                     countDownTimer?.cancel()
@@ -245,6 +250,7 @@ class MainActivity : ComponentActivity() {
         Button(
             modifier = Modifier.size(100.dp),
             shape = RoundedCornerShape(20.dp),
+            enabled = !isNight,
             onClick = {
                 countDownTimer?.cancel()
                 countdownTime = timeInSeconds * 1000L
@@ -257,30 +263,6 @@ class MainActivity : ComponentActivity() {
         ) {
             Image(
                 painter = painterResource(id = iconId),
-                contentDescription = null,
-                modifier = Modifier.fillMaxSize()
-            )
-        }
-
-    }
-
-    @Composable
-    fun btnReset30() {
-        Button(
-            modifier = Modifier.size(100.dp),
-            shape = RoundedCornerShape(20.dp),
-            onClick = {
-                countDownTimer?.cancel()
-                countdownTime = 30000L
-                initializeTimer(countdownTime)
-                remainingTime = countdownTime
-                pausedTime = countdownTime
-                isTimerRunning = false
-                isPaused = false
-            }
-        ) {
-            Image(
-                painter = painterResource(id = R.drawable.ic_reset_30),
                 contentDescription = null,
                 modifier = Modifier.fillMaxSize()
             )
