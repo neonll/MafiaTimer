@@ -23,11 +23,9 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Switch
-import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -37,11 +35,10 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.github.neonll.mafiatimer.ui.theme.MafiaTimerTheme
 import com.github.neonll.mafiatimer.ui.theme.ColorBlue
 import com.github.neonll.mafiatimer.ui.theme.ColorRed
+import com.github.neonll.mafiatimer.ui.theme.MafiaTimerTheme
 import kotlin.math.min
 
 
@@ -52,6 +49,7 @@ class MainActivity : ComponentActivity() {
     var remainingTime by mutableStateOf(countdownTime)
     var isPaused by mutableStateOf(false)
     var pausedTime by mutableStateOf(0L)
+    var isNight by mutableStateOf(false)
 
     private var countDownTimer: CountDownTimer? = null
     private var mAudioManager: AudioManager? = null
@@ -66,24 +64,21 @@ class MainActivity : ComponentActivity() {
                         verticalArrangement = Arrangement.Center,
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-
                         mAudioManager = getSystemService(AUDIO_SERVICE) as AudioManager
-
-                        var isNextTrack by remember { mutableStateOf(false) }
-
                         val paint = Paint()
 
-                        Canvas(modifier = Modifier.size(140.dp)) {
-                            val logo = BitmapFactory.decodeResource(resources,R.raw.mafia_logo)
-                            val aspectRatio = logo.width.toFloat() / logo.height.toFloat()
+                        cnvLogo(paint = paint)
+                        Spacer(modifier = Modifier.height(30.dp))
+                        cnvTimer(paint = paint)
+                        Spacer(modifier = Modifier.height(30.dp))
 
-                            val targetWidth = size.width
-                            val targetHeight = targetWidth / aspectRatio
-
-                            drawIntoCanvas { canvas ->
-                                canvas.nativeCanvas.drawBitmap(logo, null, RectF(0f, 0f, targetWidth, targetHeight), paint)
-                            }
-
+                        Row(
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            btnDay()
+                            Spacer(modifier = Modifier.width(16.dp))
+                            btnNight()
                         }
 
                         Spacer(modifier = Modifier.height(30.dp))
@@ -92,149 +87,11 @@ class MainActivity : ComponentActivity() {
                             horizontalArrangement = Arrangement.Center,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Switch(
-                                checked = isNextTrack,
-                                onCheckedChange = {
-                                    isNextTrack = it
-                                }
-                            )
-                            Spacer(modifier = Modifier.width(10.dp))
-                            Text(
-                                text = "Next track on Reset",
-                                color = Color.White,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.height(30.dp))
-
-                        Canvas(
-                            modifier = Modifier
-                                .size(260.dp)
-                        ) {
-                            val circleRadius = min(size.width, size.height) / 2
-                            val centerX = size.width / 2
-                            val centerY = size.height / 2
-                            val startAngle = -90f
-                            val sweepAngle = 360f * (remainingTime.toFloat() / countdownTime.toFloat())
-
-                            drawArc(
-                                color = if (remainingTime / 1000 <= 10) ColorRed else ColorBlue,
-                                startAngle = startAngle,
-                                sweepAngle = sweepAngle,
-                                useCenter = false,
-                                topLeft = Offset(centerX - circleRadius, centerY - circleRadius),
-                                size = androidx.compose.ui.geometry.Size(circleRadius * 2, circleRadius * 2),
-                                style = Stroke(20f)
-                            )
-
-                            paint.apply {
-                                isAntiAlias = true
-                                textSize = 300f
-                                typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-                                textAlign = Paint.Align.CENTER
-                            }
-
-                            drawIntoCanvas { canvas ->
-                                val text = "${remainingTime / 1000}"
-                                if (remainingTime / 1000 <= 10) {
-                                    paint.apply {
-                                        color = ColorRed.hashCode()
-                                    }
-                                } else {
-                                    paint.apply {
-                                        color = Color.White.hashCode()
-                                    }
-                                }
-                                canvas.nativeCanvas.drawText(text, centerX, centerY + 100, paint)
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.height(30.dp))
-                        
-                        Row(
-                            horizontalArrangement = Arrangement.Center,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Button(
-                                modifier = Modifier.size(100.dp),
-                                shape = RoundedCornerShape(20.dp),
-                                onClick = {
-                                    if (isTimerRunning) {
-                                        countDownTimer?.cancel()
-                                        isTimerRunning = false
-                                        isPaused = true
-                                        pausedTime = remainingTime
-                                        mPlayerPause()
-                                    } else {
-                                        if (isPaused) {
-                                            initializeTimer(pausedTime)
-                                            countDownTimer?.start()
-                                            isTimerRunning = true
-                                            isPaused = false
-                                            mPlayerPlay(false)
-                                        } else {
-                                            if (remainingTime > 0) {
-                                                countDownTimer?.start()
-                                                isTimerRunning = true
-                                                mPlayerPlay(isNextTrack)
-                                            }
-                                        }
-                                    }
-                                }
-                            ) {
-                                Image(
-                                    painter = painterResource(id = if (isTimerRunning) R.drawable.ic_pause else R.drawable.ic_start),
-                                    contentDescription = null,
-                                    modifier = Modifier.fillMaxSize()
-                                )
-                            }
-
+                            btnPlay()
                             Spacer(modifier = Modifier.width(16.dp))
-
-                            Button(
-                                modifier = Modifier.size(100.dp),
-                                shape = RoundedCornerShape(20.dp),
-                                onClick = {
-                                    countDownTimer?.cancel()
-                                    countdownTime = 60000L
-                                    initializeTimer(countdownTime)
-                                    remainingTime = countdownTime
-                                    pausedTime = countdownTime
-                                    isTimerRunning = false
-                                    isPaused = false
-                                    mPlayerPause()
-                                }
-                            ) {
-                                Image(
-                                    painter = painterResource(id = R.drawable.ic_reset),
-                                    contentDescription = null,
-                                    modifier = Modifier.fillMaxSize()
-                                )
-                            }
-
+                            btnReset(60)
                             Spacer(modifier = Modifier.width(16.dp))
-
-                            Button(
-                                modifier = Modifier.size(100.dp),
-                                shape = RoundedCornerShape(20.dp),
-                                onClick = {
-                                    countDownTimer?.cancel()
-                                    countdownTime = 30000L
-                                    initializeTimer(countdownTime)
-                                    remainingTime = countdownTime
-                                    pausedTime = countdownTime
-                                    isTimerRunning = false
-                                    isPaused = false
-                                    mPlayerPause()
-                                }
-                            ) {
-                                Image(
-                                    painter = painterResource(id = R.drawable.ic_reset_30),
-                                    contentDescription = null,
-                                    modifier = Modifier.fillMaxSize()
-                                )
-                            }
+                            btnReset(30)
                         }
 
                     }
@@ -242,8 +99,192 @@ class MainActivity : ComponentActivity() {
             }
         }
 
-
         initializeTimer(remainingTime)
+
+    }
+
+    @Composable
+    fun cnvLogo(paint: Paint) {
+        Canvas(modifier = Modifier.size(150.dp)) {
+            val logo = BitmapFactory.decodeResource(resources,R.raw.mafia_logo)
+            val aspectRatio = logo.width.toFloat() / logo.height.toFloat()
+
+            val targetWidth = size.width
+            val targetHeight = targetWidth / aspectRatio
+
+            drawIntoCanvas { canvas ->
+                canvas.nativeCanvas.drawBitmap(logo, null, RectF(0f, 0f, targetWidth, targetHeight), paint)
+            }
+
+        }
+    }
+
+    @Composable
+    fun cnvTimer(paint: Paint) {
+        Canvas(
+            modifier = Modifier
+                .size(260.dp)
+        ) {
+            val circleRadius = min(size.width, size.height) / 2
+            val centerX = size.width / 2
+            val centerY = size.height / 2
+            val startAngle = -90f
+            val sweepAngle = 360f * (remainingTime.toFloat() / countdownTime.toFloat())
+
+            drawArc(
+                color = if (remainingTime / 1000 <= 10) ColorRed else ColorBlue,
+                startAngle = startAngle,
+                sweepAngle = sweepAngle,
+                useCenter = false,
+                topLeft = Offset(centerX - circleRadius, centerY - circleRadius),
+                size = androidx.compose.ui.geometry.Size(circleRadius * 2, circleRadius * 2),
+                style = Stroke(20f)
+            )
+
+            paint.apply {
+                isAntiAlias = true
+                textSize = 300f
+                typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+                textAlign = Paint.Align.CENTER
+            }
+
+            drawIntoCanvas { canvas ->
+                val text = "${remainingTime / 1000}"
+                if (remainingTime / 1000 <= 10) {
+                    paint.apply {
+                        color = ColorRed.hashCode()
+                    }
+                } else {
+                    paint.apply {
+                        color = Color.White.hashCode()
+                    }
+                }
+                canvas.nativeCanvas.drawText(text, centerX, centerY + 100, paint)
+            }
+        }
+
+    }
+    
+    @Composable
+    fun btnDay() {
+        Button(
+            modifier = Modifier.size(100.dp),
+            shape = RoundedCornerShape(20.dp),
+            onClick = {
+                mPlayerPause()
+                isNight = false
+            },
+            enabled = isNight
+        ) {
+            Image(
+                painter = painterResource(id = R.drawable.ic_day),
+                contentDescription = null,
+                modifier = Modifier.fillMaxSize()
+            )
+        }
+
+    }
+
+    @Composable
+    fun btnNight() {
+        Button(
+            modifier = Modifier.size(100.dp),
+            shape = RoundedCornerShape(20.dp),
+            onClick = {
+                mPlayerPlay(true)
+                isNight = true
+            },
+            enabled = !isNight
+        ) {
+            Image(
+                painter = painterResource(id = R.drawable.ic_night),
+                contentDescription = null,
+                modifier = Modifier.fillMaxSize()
+            )
+        }
+    }
+
+    @Composable
+    fun btnPlay() {
+        Button(
+            modifier = Modifier.size(100.dp),
+            shape = RoundedCornerShape(20.dp),
+            onClick = {
+                if (isTimerRunning) {
+                    countDownTimer?.cancel()
+                    isTimerRunning = false
+                    isPaused = true
+                    pausedTime = remainingTime
+                } else {
+                    if (isPaused) {
+                        initializeTimer(pausedTime)
+                        countDownTimer?.start()
+                        isTimerRunning = true
+                        isPaused = false
+                    } else {
+                        if (remainingTime > 0) {
+                            countDownTimer?.start()
+                            isTimerRunning = true
+                        }
+                    }
+                }
+            }
+        ) {
+            Image(
+                painter = painterResource(id = if (isTimerRunning) R.drawable.ic_pause else R.drawable.ic_start),
+                contentDescription = null,
+                modifier = Modifier.fillMaxSize()
+            )
+        }
+
+    }
+
+    @Composable
+    fun btnReset(timeInSeconds: Int) {
+        val iconId = if (timeInSeconds == 30) R.drawable.ic_reset_30 else R.drawable.ic_reset_60
+        Button(
+            modifier = Modifier.size(100.dp),
+            shape = RoundedCornerShape(20.dp),
+            onClick = {
+                countDownTimer?.cancel()
+                countdownTime = timeInSeconds * 1000L
+                initializeTimer(countdownTime)
+                remainingTime = countdownTime
+                pausedTime = countdownTime
+                isTimerRunning = false
+                isPaused = false
+            }
+        ) {
+            Image(
+                painter = painterResource(id = iconId),
+                contentDescription = null,
+                modifier = Modifier.fillMaxSize()
+            )
+        }
+
+    }
+
+    @Composable
+    fun btnReset30() {
+        Button(
+            modifier = Modifier.size(100.dp),
+            shape = RoundedCornerShape(20.dp),
+            onClick = {
+                countDownTimer?.cancel()
+                countdownTime = 30000L
+                initializeTimer(countdownTime)
+                remainingTime = countdownTime
+                pausedTime = countdownTime
+                isTimerRunning = false
+                isPaused = false
+            }
+        ) {
+            Image(
+                painter = painterResource(id = R.drawable.ic_reset_30),
+                contentDescription = null,
+                modifier = Modifier.fillMaxSize()
+            )
+        }
 
     }
 
@@ -256,7 +297,6 @@ class MainActivity : ComponentActivity() {
             override fun onFinish() {
                 remainingTime = 0
                 isTimerRunning = false
-                mPlayerPause()
             }
         }
     }
@@ -277,3 +317,4 @@ class MainActivity : ComponentActivity() {
         mAudioManager?.dispatchMediaKeyEvent(event)
     }
 }
+
