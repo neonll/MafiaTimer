@@ -5,6 +5,7 @@ import android.graphics.Paint
 import android.graphics.RectF
 import android.graphics.Typeface
 import android.media.AudioManager
+import android.media.MediaPlayer
 import android.os.Bundle
 import android.os.CountDownTimer
 import android.view.KeyEvent
@@ -53,6 +54,7 @@ class MainActivity : ComponentActivity() {
 
     private var countDownTimer: CountDownTimer? = null
     private var mAudioManager: AudioManager? = null
+    private var mediaPlayer10Sec: MediaPlayer? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -173,6 +175,11 @@ class MainActivity : ComponentActivity() {
             onClick = {
                 mPlayerPause()
                 isNight = false
+                isPaused = false
+                if (mediaPlayer10Sec != null) {
+                    mediaPlayer10Sec!!.release()
+                    mediaPlayer10Sec = null
+                }
             },
             enabled = isNight
         ) {
@@ -197,6 +204,10 @@ class MainActivity : ComponentActivity() {
                 pausedTime = countdownTime
                 isTimerRunning = false
                 isPaused = false
+                if (mediaPlayer10Sec != null) {
+                    mediaPlayer10Sec!!.release()
+                    mediaPlayer10Sec = null
+                }
             },
             enabled = !isNight
         ) {
@@ -216,6 +227,9 @@ class MainActivity : ComponentActivity() {
             enabled = !isNight,
             onClick = {
                 if (isTimerRunning) {
+                    if (mediaPlayer10Sec != null && mediaPlayer10Sec!!.isPlaying) {
+                        mediaPlayer10Sec!!.pause()
+                    }
                     countDownTimer?.cancel()
                     isTimerRunning = false
                     isPaused = true
@@ -226,8 +240,12 @@ class MainActivity : ComponentActivity() {
                         countDownTimer?.start()
                         isTimerRunning = true
                         isPaused = false
+                        if (mediaPlayer10Sec != null && !mediaPlayer10Sec!!.isPlaying && mediaPlayer10Sec!!.currentPosition != 0) {
+                            mediaPlayer10Sec!!.start()
+                        }
                     } else {
                         if (remainingTime > 0) {
+                            MediaPlayer.create(baseContext, R.raw.sound_start).start()
                             countDownTimer?.start()
                             isTimerRunning = true
                         }
@@ -252,6 +270,10 @@ class MainActivity : ComponentActivity() {
             shape = RoundedCornerShape(20.dp),
             enabled = !isNight,
             onClick = {
+                if (mediaPlayer10Sec != null && mediaPlayer10Sec!!.isPlaying) {
+                    mediaPlayer10Sec!!.release()
+                    mediaPlayer10Sec = null
+                }
                 countDownTimer?.cancel()
                 countdownTime = timeInSeconds * 1000L
                 initializeTimer(countdownTime)
@@ -274,11 +296,19 @@ class MainActivity : ComponentActivity() {
         countDownTimer = object : CountDownTimer(timeLimit, 1000) {
             override fun onTick(millisUntilFinished: Long) {
                 remainingTime = millisUntilFinished
+                if (millisUntilFinished / 1000 == 10L && mediaPlayer10Sec == null) {
+                    mediaPlayer10Sec = MediaPlayer.create(baseContext, R.raw.sound_10sec)
+                    mediaPlayer10Sec!!.start()
+                }
             }
 
             override fun onFinish() {
                 remainingTime = 0
                 isTimerRunning = false
+                if (mediaPlayer10Sec != null) {
+                    mediaPlayer10Sec!!.release()
+                    mediaPlayer10Sec = null
+                }
             }
         }
     }
